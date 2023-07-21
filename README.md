@@ -143,3 +143,13 @@ print(tokenizer.tokenize(text))
 ['They', 'ignore', 'our', 'need', 'to', 'obtain', 'a', 'deep', 'understanding', 'of', 'a', 'subject', ',', 'which', 'includes', 'memorizing', 'and', 'storing', 'a', 'richly', 'structured', 'database']
 ```
 
+## 정제 및 추출
+
+- 정제: 데이터 사용 목적에 맞추어 노이즈를 제거
+
+1: 대문자 vs 소문자<br>
+> 서로 다르게 본다.
+
+2: 츌현 횟수가 적은 단어의 제거
+>
+3: 길이가 짭은 단어, 지시(대)명사, 관사의 제거
