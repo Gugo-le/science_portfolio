@@ -1,55 +1,40 @@
+import tensorflow as tf
 import numpy as np
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense
-import pickle
 
-# 텍스트 데이터와 라벨 데이터 예시
+# 데이터 예시
 texts = ["This movie was amazing!", "I didn't like the film at all."]
 labels = np.array([1, 0]) # 긍정=1, 부정=0
 
-# 토큰화 및 시퀀스 생성
-tokenizer = Tokenizer(num_words=10000, oov_token="<OOV>")
-tokenizer.fit_on_texts(texts)
-sequences = tokenizer.texts_to_sequences(texts)
+# 토큰화 및 패딩 함수
+def tokenize_and_pad(texts, max_len=100):
+    tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=10000, oov_token="<OOV>")
+    tokenizer.fit_on_texts(texts)
+    sequences = tokenizer.texts_to_sequences(texts)
+    padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(sequences, maxlen=max_len, padding="post", truncating="post")
+    return padded_sequences, tokenizer
 
-# 패딩
-padded_sequences = pad_sequences(sequences, maxlen=100, padding="post", truncating="post")
+# 모델 학습 함수
+def train_model(texts, labels, max_len=100, batch_size=64, epochs=50):
+    padded_sequences, tokenizer = tokenize_and_pad(texts, max_len=max_len)
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index)+1, output_dim=32, input_length=max_len),
+        tf.keras.layers.LSTM(32, dropout=0.2),
+        tf.keras.layers.Dense(1, activation="sigmoid")
+    ])
+    model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+    model.fit(padded_sequences, labels, batch_size=batch_size, epochs=epochs)
+    return model, tokenizer
 
-# 모델 생성
-model = Sequential([
-    Embedding(10000, 32, input_length=100),
-    LSTM(32, dropout=0.2),
-    Dense(1, activation="sigmoid")
-])
+# 모델 예측 함수
+def predict_sentiment(model, tokenizer, text):
+    sequence = tokenizer.texts_to_sequences([text])
+    padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(sequence, maxlen=model.input_shape[1], padding="post", truncating="post")
+    prediction = model.predict(padded_sequence)[0, 0]
+    sentiment = "Positive" if prediction >= 0.5 else "Negative"
+    return sentiment, prediction
 
-# 모델 컴파일
-model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
-model.summary()
-
-# 모델 훈련
-model.fit(padded_sequences, labels, epochs=10, batch_size=128)
-
-# 모델 저장
-with open("tokenizer.pickle", "wb") as f:
-    pickle.dump(tokenizer, f)
-model.save("sentiment_model.h5")
-
-# 모델 불러오기
-with open("tokenizer.pickle", "rb") as f:
-    tokenizer = pickle.load(f)
-model = load_model("sentiment_model.h5")
-
-# 감정 예측 함수
-def predict_sentiment(text):
-    new_sequence = tokenizer.texts_to_sequences([text])
-    padded_new_sequence = pad_sequences(new_sequence, maxlen=100, padding="post", truncating="post")
-    prediction = model.predict(padded_new_sequence)
-    sentiment = "Positive" if float(prediction) >= 0.5 else "Negative"
-    return sentiment, float(prediction)
-
-# 예측 예시
-text_to_predict = "This was a great movie!"
-sentiment, prediction = predict_sentiment(text_to_predict)
+# 모델 학습 및 예측 예시
+model, tokenizer = train_model(texts, labels)
+text_to_predict = "I like you😍"
+sentiment, prediction = predict_sentiment(model, tokenizer, text_to_predict)
 print(f"Text: {text_to_predict}\nSentiment: {sentiment} ({prediction:.4f})")
