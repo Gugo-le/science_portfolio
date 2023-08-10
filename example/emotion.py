@@ -1,9 +1,8 @@
 import tensorflow as tf
 import numpy as np
 
-# 데이터 예시
 texts = ["This movie was amazing!", "I didn't like the film at all."]
-labels = np.array([1, 0]) # 긍정=1, 부정=0
+labels = np.array([1, 0]) 
 
 # 토큰화 및 패딩 함수
 def tokenize_and_pad(texts, max_len=100):
@@ -13,8 +12,7 @@ def tokenize_and_pad(texts, max_len=100):
     padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(sequences, maxlen=max_len, padding="post", truncating="post")
     return padded_sequences, tokenizer
 
-# 모델 학습 함수
-def train_model(texts, labels, max_len=100, batch_size=64, epochs=50):
+def train_model(texts, labels, max_len=100, batch_size=128, epochs=99):
     padded_sequences, tokenizer = tokenize_and_pad(texts, max_len=max_len)
     model = tf.keras.models.Sequential([
         tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index)+1, output_dim=32, input_length=max_len),
@@ -35,6 +33,6 @@ def predict_sentiment(model, tokenizer, text):
 
 # 모델 학습 및 예측 예시
 model, tokenizer = train_model(texts, labels)
-text_to_predict = "I like you😍"
+text_to_predict = "This movie was amazing!"
 sentiment, prediction = predict_sentiment(model, tokenizer, text_to_predict)
 print(f"Text: {text_to_predict}\nSentiment: {sentiment} ({prediction:.4f})")
